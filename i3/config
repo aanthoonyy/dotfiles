@@ -173,7 +173,7 @@ default_floating_border normal 3
 hide_edge_borders none
 gaps inner 0
 gaps outer 0
-client.focused #0088ff #f5f5f7 #1d1d1f #0088ff #0088ff
+client.focused #d1d1d6 #f5f5f7 #1d1d1f #d1d1d6 #d1d1d6
 client.focused_inactive #d1d1d6 #f5f5f7 #616166 #d1d1d6 #d1d1d6
 client.unfocused #d1d1d6 #f5f5f7 #616166 #d1d1d6 #d1d1d6
 client.urgent #c54842 #f5f5f7 #1d1d1f #c54842 #c54842
