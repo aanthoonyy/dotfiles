@@ -1,4 +1,5 @@
 import ctypes as c
+import copy
 import fcntl
 import json
 import os
@@ -157,6 +158,60 @@ def snap_rect(rect, side):
     return result
 
 
+def snap_plan(workspace, source, target, side):
+    tree = copy.deepcopy(workspace)
+    def remove(node):
+        if node['id'] == source['id']:
+            return None
+        children = [result for child in node.get('nodes', []) if (result := remove(child)) is not None]
+        node['nodes'] = children
+        if not node.get('window') and node['type'] != 'workspace':
+            if not children:
+                return None
+            if len(children) == 1:
+                child = children[0]
+                child['percent'] = node.get('percent')
+                return child
+        return node
+    tree = remove(tree)
+    if tree is None:
+        return {}
+    def insert(node):
+        if node['id'] == target['id']:
+            share = node.get('percent')
+            incoming = copy.deepcopy(source)
+            incoming['percent'] = node['percent'] = .5
+            children = [incoming, node] if side in ('left', 'top') else [node, incoming]
+            return {'id': -1, 'type': 'con', 'layout': 'splith' if side in ('left', 'right') else 'splitv', 'percent': share, 'nodes': children}
+        node['nodes'] = [insert(child) for child in node.get('nodes', [])]
+        return node
+    tree = insert(tree)
+    result = {}
+    def allocate(node, rect):
+        if node.get('window'):
+            result[node['id']] = {'rect': dict(rect), 'name': node.get('name', 'Window')}
+            return
+        children = node.get('nodes', [])
+        if not children:
+            return
+        vertical = node.get('layout') == 'splitv'
+        axis, length = ('y', 'height') if vertical else ('x', 'width')
+        weights = [child.get('percent') or 1 / len(children) for child in children]
+        total = sum(weights)
+        consumed = 0
+        fraction = 0
+        for index, child in enumerate(children):
+            fraction += weights[index] / total
+            edge = rect[length] if index == len(children) - 1 else round(rect[length] * fraction)
+            child_rect = dict(rect)
+            child_rect[axis] += consumed
+            child_rect[length] = edge - consumed
+            allocate(child, child_rect)
+            consumed = edge
+    allocate(tree, workspace['rect'])
+    return result
+
+
 def place_snap(source, target, side):
     cid, tid = source['id'], target['id']
     mark = f'rice-drop-{os.getpid()}'
@@ -181,7 +236,9 @@ def snap_drag(node, workspace):
     import gi
     gi.require_version('Gtk', '3.0')
     gi.require_version('Gdk', '3.0')
-    from gi.repository import Gdk, GLib, Gtk
+    gi.require_version('PangoCairo', '1.0')
+    from gi.repository import Gdk, GLib, Gtk, Pango, PangoCairo
+    import cairo
     preview = Gtk.Window(type=Gtk.WindowType.POPUP)
     preview.set_title('Snap preview')
     preview.set_accept_focus(False)
@@ -195,18 +252,43 @@ def snap_drag(node, workspace):
     started = False
     previous_point = None
     candidates = []
+    planned = {}
+    positions = {}
+    origins = {}
+    animation_start = 0
+    area = workspace['rect']
     def draw(widget, context):
-        width, height = widget.get_allocated_width(), widget.get_allocated_height()
-        context.set_source_rgba(0.0, 0.4, 0.8, 0.18)
+        context.set_operator(cairo.OPERATOR_SOURCE)
+        context.set_source_rgba(0, 0, 0, 0)
         context.paint()
-        context.set_source_rgba(0.0, 0.4, 0.8, 0.9)
-        context.set_line_width(2)
-        context.rectangle(1, 1, max(0, width - 2), max(0, height - 2))
-        context.stroke()
+        context.set_operator(cairo.OPERATOR_OVER)
+        for cid, item in planned.items():
+            rect = positions.get(cid, item['rect'])
+            x, y = rect['x'] - area['x'], rect['y'] - area['y']
+            width, height = rect['width'], rect['height']
+            active = cid == node['id']
+            context.set_source_rgba(0, .4, .8, .22) if active else context.set_source_rgba(.3, .35, .4, .08)
+            context.rectangle(x + 1, y + 1, max(0, width - 2), max(0, height - 2))
+            context.fill_preserve()
+            context.set_source_rgba(0, .4, .8, .95) if active else context.set_source_rgba(.3, .35, .4, .65)
+            context.set_line_width(2)
+            context.stroke()
+            layout = widget.create_pango_layout(item['name'].replace('\n', ' '))
+            layout.set_font_description(Pango.FontDescription('Noto Sans 10'))
+            layout.set_width(max(1, int(width - 32)) * Pango.SCALE)
+            layout.set_ellipsize(Pango.EllipsizeMode.END)
+            text_width, text_height = layout.get_pixel_size()
+            tx, ty = x + (width - text_width) / 2, y + (height - text_height) / 2
+            context.set_source_rgba(.96, .96, .97, .94)
+            context.rectangle(tx - 8, ty - 5, text_width + 16, text_height + 10)
+            context.fill()
+            context.set_source_rgb(.11, .11, .12)
+            context.move_to(tx, ty)
+            PangoCairo.show_layout(context, layout)
         return False
     drawing.connect('draw', draw)
     def update():
-        nonlocal selected, started, previous_point, candidates
+        nonlocal selected, started, previous_point, candidates, planned, positions, origins, animation_start
         x, y, mask = pointer()
         if not mask & (1 << 8):
             preview.hide()
@@ -224,6 +306,12 @@ def snap_drag(node, workspace):
                 return True
             started = True
             candidates = [n for n, ws in i3.windows() if n['id'] != node['id'] and ws['id'] == workspace['id'] and n['floating'].endswith('off') and not n.get('fullscreen_mode')]
+        if planned:
+            progress = min(1, (time.monotonic() - animation_start) / .12)
+            eased = 1 - (1 - progress) ** 3
+            positions = {cid: {key: origins[cid][key] + (item['rect'][key] - origins[cid][key]) * eased for key in ('x', 'y', 'width', 'height')} for cid, item in planned.items()}
+            if progress < 1:
+                drawing.queue_draw()
         if previous_point == (x, y):
             return True
         previous_point = x, y
@@ -236,9 +324,13 @@ def snap_drag(node, workspace):
         if selected and selected[0]['id'] == target['id'] and selected[1] == side:
             return True
         selected = target, side
-        rect = snap_rect(target['rect'], side)
-        preview.resize(rect['width'], rect['height'])
-        preview.move(rect['x'], rect['y'])
+        planned = snap_plan(workspace, node, target, side)
+        actual = {n['id']: n['rect'] for n in candidates + [node]}
+        origins = {cid: dict(positions.get(cid, actual.get(cid, item['rect']))) for cid, item in planned.items()}
+        animation_start = time.monotonic()
+        preview.resize(area['width'], area['height'])
+        preview.move(area['x'], area['y'])
+        drawing.queue_draw()
         preview.show_all()
         preview.get_window().set_pass_through(True)
         return True
