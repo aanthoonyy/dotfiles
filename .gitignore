@@ -82,3 +82,7 @@ secrets.json
 !/bin/zathura-dev
 !/bin/handbrake-dev
 !/bin/README.md
+!/zsh/
+/zsh/*
+!/zsh/.zshrc
+!/zsh/README.md
