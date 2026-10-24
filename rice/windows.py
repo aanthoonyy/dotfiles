@@ -96,10 +96,10 @@ def maximize(node, workspace):
         if saved['floating']:
             geometry(cid, saved['rect'])
         else:
-            i3.command(f'[con_id={cid}] floating disable, border normal 1')
+            i3.command(f'[con_id={cid}] floating disable, border pixel 1')
     else:
         state['maximized'][str(cid)] = {'floating': node['floating'].endswith('on'), 'rect': node['rect']}
-        i3.command(f'[con_id={cid}] fullscreen disable, floating enable, border normal 3')
+        i3.command(f'[con_id={cid}] fullscreen disable, floating enable, border pixel 3')
         geometry(cid, workspace['rect'])
     save()
 
@@ -127,7 +127,7 @@ def drag(node, workspace, resize=False):
                 rect['x'] = round(start_x - (start_x - rect['x']) / rect['width'] * width)
                 rect['y'] = start_y - min(start_y - rect['y'], 24)
                 rect['width'], rect['height'] = width, height
-            i3.command(f'[con_id={cid}] fullscreen disable, floating enable, border normal 3')
+            i3.command(f'[con_id={cid}] fullscreen disable, floating enable, border pixel 3')
             geometry(cid, rect)
         if started:
             if resize:
@@ -217,7 +217,7 @@ def place_snap(source, target, side):
     mark = f'rice-drop-{os.getpid()}'
     orientation = 'h' if side in ('left', 'right') else 'v'
     opposite = 'v' if orientation == 'h' else 'h'
-    i3.command(f'[con_id={cid}] fullscreen disable, floating disable, border normal 1')
+    i3.command(f'[con_id={cid}] fullscreen disable, floating disable, border pixel 1')
     try:
         i3.command(f'[con_id={tid}] mark --add {mark}, split {opposite}, split {orientation}')
         i3.command(f'[con_id={cid}] move container to mark {mark}')
@@ -449,7 +449,7 @@ else:
         maximize(node, workspace)
     elif action == 'retile':
         state['maximized'].pop(str(node['id']), None)
-        i3.command(f'[con_id={node["id"]}] floating disable, border normal 1')
+        i3.command(f'[con_id={node["id"]}] floating disable, border pixel 1')
         save()
     elif action == 'close':
         i3.command(f'[con_id={node["id"]}] kill')

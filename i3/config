@@ -168,8 +168,8 @@ bindsym $mod+r mode "resize"
 
 # Start i3bar to display a workspace bar (plus the system information i3status
 # finds out, if available)
-default_border normal 1
-default_floating_border normal 3
+default_border pixel 1
+default_floating_border pixel 3
 hide_edge_borders none
 gaps inner 0
 gaps outer 0
@@ -189,16 +189,12 @@ exec --no-startup-id picom --config ~/.config/picom/picom.conf
 exec_always --no-startup-id python3 ~/.config/rice/windows.py daemon
 default_orientation horizontal
 workspace_layout default
-for_window [window_type="normal"] border normal 1
-bindsym button1 focus; exec --no-startup-id python3 ~/.config/rice/windows.py snap
+for_window [window_type="normal"] border pixel 1
 bindsym --whole-window $mod+button1 focus; exec --no-startup-id python3 ~/.config/rice/windows.py snap
-bindsym button3 focus; exec --no-startup-id python3 ~/.config/rice/windows.py menu
 bindsym $mod+Down exec --no-startup-id python3 ~/.config/rice/windows.py minimize
 bindsym $mod+Up exec --no-startup-id python3 ~/.config/rice/windows.py maximize
 bindsym $mod+Shift+Down exec --no-startup-id python3 ~/.config/rice/windows.py restore
 bindsym $mod+t exec --no-startup-id python3 ~/.config/rice/windows.py retile
-bindsym Mod1+F4 kill
-bindsym Mod1+space exec --no-startup-id python3 ~/.config/rice/windows.py menu
 bindsym Mod1+Tab exec --no-startup-id python3 ~/.config/rice/windows.py alt-tab
 bindsym Mod1+Shift+Tab exec --no-startup-id python3 ~/.config/rice/windows.py switch
 
