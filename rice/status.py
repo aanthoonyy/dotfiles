@@ -50,6 +50,6 @@ while True:
         {'name': 'calendar', 'full_text': now.strftime('%m-%d-%Y  %I:%M %p').replace('  0', '  ')},
     ]
     for block in blocks:
-        block.update(separator=False, separator_block_width=0, markup='pango', min_width=176 if block['name'] == 'calendar' else 40, align='center')
+        block.update(separator=False, separator_block_width=0, markup='pango', min_width=154 if block['name'] == 'calendar' else 26, align='center')
     print(json.dumps(blocks) + ',', flush=True)
     time.sleep(2)

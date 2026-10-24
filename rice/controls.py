@@ -8,6 +8,10 @@ import socket
 import subprocess
 import sys
 import threading
+import time
+
+import cairo
+from PIL import Image, ImageFilter
 
 import gi
 
@@ -44,6 +48,7 @@ window { background-color: transparent; }
 .card .heading { font-size: 14pt; font-weight: 600; }
 .card .secondary { color: #616166; font-size: 9pt; }
 .card button { background-image: none; background-color: #ffffff; color: #1d1d1f; border: 1px solid #d1d1d6; border-radius: 7px; box-shadow: none; padding: 6px 10px; }
+.card button { transition: background-color 120ms ease-out, border-color 120ms ease-out; }
 .card button:hover { background-color: #e5edfa; }
 .card button:checked { background-color: #d6e8ff; }
 .card .output-row { padding: 12px; border-color: transparent; background-color: transparent; }
@@ -54,12 +59,42 @@ window { background-color: transparent; }
 .card .icon-button { padding: 6px; min-width: 24px; min-height: 24px; }
 .card scale trough { background-color: #d1d1d6; border: none; min-height: 5px; }
 .card scale highlight { background-color: #0088ff; border: none; }
+.card scale slider { transition: background-color 100ms ease-out; }
 .card scale slider { background-image: none; background-color: #ffffff; border: 1px solid #bdbdc2; min-width: 16px; min-height: 16px; box-shadow: 0 1px 2px alpha(black, 0.12); }
 .card calendar { background-color: #ffffff; color: #1d1d1f; border: 1px solid #d1d1d6; border-radius: 7px; padding: 8px; }
 .card calendar:selected { background-color: #0088ff; color: #ffffff; }
 .card calendar.header { background-color: #ececf0; }
 ''')
 Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+
+class MotionStack(Gtk.Stack):
+    def __init__(self):
+        super().__init__()
+        self.motion_started = None
+
+    def begin_motion(self, enabled):
+        self.motion_started = time.monotonic() if enabled else None
+
+    def do_draw(self, context):
+        if self.motion_started is None or not self.get_transition_running():
+            return Gtk.Stack.do_draw(self, context)
+        duration = self.get_transition_duration() / 1000
+        progress = min(1, max(0, (time.monotonic() - self.motion_started) / duration))
+        radius = 8 * min(1, progress / 0.12) * (1 - progress) ** 1.5
+        if radius < 0.2:
+            return Gtk.Stack.do_draw(self, context)
+        width, height = self.get_allocated_width(), self.get_allocated_height()
+        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, width, height)
+        Gtk.Stack.do_draw(self, cairo.Context(surface))
+        surface.flush()
+        image = Image.frombuffer('RGBA', (width, height), surface.get_data(), 'raw', 'BGRA', surface.get_stride(), 1)
+        blurred = image.filter(ImageFilter.BoxBlur((radius, 0)))
+        pixels = bytearray(blurred.tobytes('raw', 'BGRA'))
+        frame = cairo.ImageSurface.create_for_data(pixels, cairo.FORMAT_ARGB32, width, height, width * 4)
+        context.set_source_surface(frame, 0, 0)
+        context.paint()
+        return False
 
 
 class Controls(Gtk.Window):
@@ -72,6 +107,14 @@ class Controls(Gtk.Window):
         if visual:
             self.set_visual(visual)
         self.set_app_paintable(True)
+        self.stack = MotionStack()
+        self.stack.set_homogeneous(False)
+        self.stack.set_interpolate_size(True)
+        self.stack.set_transition_duration(220)
+        self.stack.connect('notify::transition-running', self.cleanup_pages)
+        self.add(self.stack)
+        self.anchor_area = None
+        self.connect('size-allocate', self.anchor)
         self.panel = None
         self.targets = {}
         self.seat = None
@@ -122,7 +165,7 @@ class Controls(Gtk.Window):
         if name.startswith('{'):
             event = json.loads(name)
             name = event['panel']
-            widths = {'sound': 40, 'network': 40, 'calendar': 176}
+            widths = {'sound': 26, 'network': 26, 'calendar': 154}
             left = event['x'] - sum(width for key, width in list(widths.items())[:list(widths).index(name)])
             self.targets = {}
             for key, width in widths.items():
@@ -132,31 +175,54 @@ class Controls(Gtk.Window):
             return False
         if toggle and self.get_visible() and self.panel == name:
             return self.dismiss()
-        self.dismiss()
+        visible = self.get_visible()
+        previous = self.panel
         self.panel = name
-        if self.get_child():
-            self.remove(self.get_child())
         self.card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
         self.card.get_style_context().add_class('card')
         self.card.set_size_request(360 if name in ('sound', 'sound_outputs') else 330, -1)
-        self.add(self.card)
+        self.stack.add(self.card)
         getattr(self, name)()
-        self.show_all()
+        moving = visible and (previous, name) in (('sound', 'sound_outputs'), ('sound_outputs', 'sound'))
+        self.card.show_all()
+        transition = Gtk.StackTransitionType.CROSSFADE
+        if previous == 'sound' and name == 'sound_outputs':
+            transition = Gtk.StackTransitionType.SLIDE_LEFT
+        elif previous == 'sound_outputs' and name == 'sound':
+            transition = Gtk.StackTransitionType.SLIDE_RIGHT
+        self.stack.set_transition_type(transition if visible else Gtk.StackTransitionType.NONE)
+        self.stack.begin_motion(moving)
+        self.stack.set_visible_child(self.card)
         display = Gdk.Display.get_default()
-        pointer = display.get_default_seat().get_pointer()
-        screen, x, y = pointer.get_position()
-        monitor = display.get_monitor_at_point(x, y)
-        area = monitor.get_geometry()
-        minimum, natural = self.get_preferred_size()
-        width, height = natural.width, natural.height
-        self.resize(width, height)
-        self.move(area.x + area.width - width - 8, area.y + area.height - height - 34)
-        self.present()
-        self.seat = display.get_default_seat()
-        status = self.seat.grab(self.get_window(), Gdk.SeatCapabilities.ALL, True, None, None, None, None)
-        if status != Gdk.GrabStatus.SUCCESS:
-            self.dismiss()
+        if not visible:
+            pointer = display.get_default_seat().get_pointer()
+            screen, x, y = pointer.get_position()
+            self.anchor_area = display.get_monitor_at_point(x, y).get_geometry()
+            self.show_all()
+            minimum, natural = self.get_preferred_size()
+            self.resize(natural.width, natural.height)
+            self.anchor(self, natural)
+            self.present()
+            self.seat = display.get_default_seat()
+            status = self.seat.grab(self.get_window(), Gdk.SeatCapabilities.ALL, True, None, None, None, None)
+            if status != Gdk.GrabStatus.SUCCESS:
+                self.dismiss()
+        if not self.stack.get_transition_running():
+            self.cleanup_pages()
         return False
+
+    def anchor(self, widget, allocation):
+        if self.anchor_area:
+            area = self.anchor_area
+            self.move(area.x + area.width - allocation.width - 8, area.y + area.height - allocation.height - 34)
+
+    def cleanup_pages(self, *args):
+        if self.stack.get_transition_running():
+            return
+        current = self.stack.get_visible_child()
+        for child in self.stack.get_children():
+            if child is not current:
+                self.stack.remove(child)
 
     def outputs(self):
         try:
@@ -235,7 +301,7 @@ class Controls(Gtk.Window):
         header.pack_start(back, False, False, 0)
         header.pack_start(self.label('Sound output', 'heading'), True, True, 0)
         self.add_item(header)
-        self.add_item(self.label('Choose where to play sound', 'secondary'))
+        self.output_hint = self.add_item(self.label('Choose where to play sound', 'secondary'))
         default = command('pactl', 'get-default-sink')
         outputs = self.outputs()
         if not outputs:
@@ -250,6 +316,13 @@ class Controls(Gtk.Window):
 
     def change_output(self, button, name):
         self.card.set_sensitive(False)
+        started = time.monotonic()
+        row = button.get_child()
+        spinner = Gtk.Spinner()
+        row.pack_end(spinner, False, False, 0)
+        spinner.show()
+        spinner.start()
+        self.output_hint.set_text('Switching sound output…')
         def update():
             message = ''
             try:
@@ -265,16 +338,24 @@ class Controls(Gtk.Window):
             except (OSError, subprocess.TimeoutExpired, ValueError):
                 message = 'Could not finish switching audio. Try again.'
             def finish():
-                if self.panel in ('sound', 'sound_outputs'):
-                    visible = self.get_visible()
-                    self.show_panel('sound', toggle=False)
-                    if message:
-                        self.add_item(self.label(message, 'secondary'))
-                        self.card.show_all()
-                    if not visible:
-                        self.dismiss()
+                if self.panel != 'sound_outputs' or not self.get_visible():
+                    return False
+                self.show_panel('sound_outputs', toggle=False)
+                if message:
+                    self.output_hint.set_text(message)
+                    return False
+                self.output_hint.set_text('Sound output selected')
+                def return_to_volume():
+                    if self.panel == 'sound_outputs' and self.get_visible():
+                        self.show_panel('sound', toggle=False)
+                    return False
+                GLib.timeout_add(180, return_to_volume)
                 return False
-            GLib.idle_add(finish)
+            def schedule_finish():
+                delay = max(1, round((0.18 - (time.monotonic() - started)) * 1000))
+                GLib.timeout_add(delay, finish)
+                return False
+            GLib.idle_add(schedule_finish)
         threading.Thread(target=update, daemon=True).start()
 
     def volume_changed(self, slider):

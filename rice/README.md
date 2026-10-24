@@ -33,3 +33,9 @@ The bottom-right controls open Sound, Network, and Calendar popovers. Click outs
 The clock uses month-day-year and 12-hour time. Speaker and connection icons use the installed Symbols Nerd Font Mono. Sound output buttons set the default device and move existing playback streams. Horizontal i3bar padding stays at zero so its click regions align with the controls.
 
 Sound uses a compact volume view. Click the current output row to open the device list; a blue check marks the active output. Selecting a device returns to the volume view.
+
+The icon buttons use compact 26-pixel targets. Control Center popovers use short Picom fade/scale animations, with brief hover transitions on buttons. Picom 13 or newer supports the animation rules used here.
+
+Sound pages slide over 220 ms and resize while staying anchored above the bar. Device selection shows a spinner, confirms the selected output, then slides back to volume without closing the popover.
+
+Device-page transitions render the actual moving content through a horizontal pixel blur, strongest during fast movement and fading to crisp content at rest. This uses the installed Pillow and Cairo Python libraries.
