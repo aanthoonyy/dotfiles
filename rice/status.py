@@ -17,8 +17,8 @@ while True:
         pass
     now = datetime.datetime.now()
     blocks.extend([
-        {"full_text": now.strftime("%a  %d %b"), "color": "#89949f"},
-        {"full_text": now.strftime("%H:%M"), "color": "#a7c4b5"},
+        {"full_text": now.strftime("%a  %d %b"), "color": "#616166"},
+        {"full_text": now.strftime("%H:%M"), "color": "#3a3a3c"},
     ])
     for block in blocks:
         block.update(separator=False, separator_block_width=28)

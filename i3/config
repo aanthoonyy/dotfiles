@@ -185,16 +185,16 @@ bindsym $mod+r mode "resize"
 
 # Start i3bar to display a workspace bar (plus the system information i3status
 # finds out, if available)
-default_border pixel 2
-default_floating_border pixel 2
+default_border pixel 1
+default_floating_border pixel 1
 hide_edge_borders none
-gaps inner 14
-gaps outer 10
-client.focused #a7c4b5 #171d23 #e4e8ec #a7c4b5 #a7c4b5
-client.focused_inactive #303942 #171d23 #89949f #303942 #303942
-client.unfocused #252d35 #171d23 #89949f #252d35 #252d35
-client.urgent #d58a87 #171d23 #e4e8ec #d58a87 #d58a87
-client.background #11161c
+gaps inner 0
+gaps outer 0
+client.focused #0088ff #f5f5f7 #1d1d1f #0088ff #0088ff
+client.focused_inactive #d1d1d6 #f5f5f7 #616166 #d1d1d6 #d1d1d6
+client.unfocused #d1d1d6 #f5f5f7 #616166 #d1d1d6 #d1d1d6
+client.urgent #c54842 #f5f5f7 #1d1d1f #c54842 #c54842
+client.background #e5e5ea
 workspace_auto_back_and_forth yes
 focus_follows_mouse no
 for_window [window_role="pop-up"] floating enable
@@ -204,24 +204,24 @@ exec_always --no-startup-id feh --no-fehbg --bg-fill ~/.config/rice/wallpaper.pn
 exec --no-startup-id picom --config ~/.config/picom/picom.conf
 
 bar {
-        position top
-        font pango:Source Code Pro 10
+        position bottom
+        font pango:Source Code Pro 9
         status_command python3 ~/.config/rice/status.py
         separator_symbol "·"
         workspace_buttons yes
         strip_workspace_numbers no
         binding_mode_indicator yes
         tray_output DP-2
-        padding 9 18 9 18
-        workspace_min_width 30
+        padding 2 8 2 8
+        workspace_min_width 24
         colors {
-                background #11161c
-                statusline #a6b0ba
-                separator #404b55
-                focused_workspace #a7c4b5 #a7c4b5 #11161c
-                active_workspace #1b242c #1b242c #e4e8ec
-                inactive_workspace #11161c #11161c #77838e
-                urgent_workspace #d58a87 #d58a87 #11161c
-                binding_mode #a7c4b5 #a7c4b5 #11161c
+                background #e9e9ed
+                statusline #3a3a3c
+                separator #c7c7cc
+                focused_workspace #ffffff #ffffff #0066cc
+                active_workspace #dedee3 #dedee3 #1d1d1f
+                inactive_workspace #e9e9ed #e9e9ed #616166
+                urgent_workspace #c54842 #c54842 #ffffff
+                binding_mode #0088ff #0088ff #ffffff
         }
 }
