@@ -51,3 +51,5 @@ Alt+Tab toggles recent apps. Alt+Shift+Tab or the overlapping-windows button bes
 These are i3 title bars with a window menu. Native minimize/maximize/close buttons require a different window manager. Window geometry and minimized state are kept outside Git in `~/.local/state/rice/windows.json`; focus history is per session. Original settings before this change are in `~/.local/state/rice/backups/`.
 
 Normal windows have short open/close fades and 160 ms movement/resize transitions. Drag-preview regions interpolate over 120 ms. The layout preview accounts for the space freed by the dragged window.
+
+Window and workspace switching is instant: normal-window show/hide fades are disabled. Opening, closing, and layout changes retain their short animations.
