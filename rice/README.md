@@ -15,7 +15,7 @@ i3-msg reload
 
 Super+Enter opens Kitty; Super+D opens Rofi. Open new Kitty windows to pick up terminal changes. Restart Picom after changing its configuration.
 
-The wallpaper and bar script live in `~/.config/rice/`. Regenerate the wallpaper with `python3 ~/.config/rice/wallpaper.py`, then apply it with `feh --no-fehbg --bg-fill ~/.config/rice/wallpaper.png`.
+The wallpaper and bar script live in `~/.config/rice/`. The active wallpaper is `wallpaper-tux-light.png`, a 3840×2160 light-gray edit of the Tux artwork in `tux-original.jpg`. Apply it with `feh --no-fehbg --bg-fill ~/.config/rice/wallpaper-tux-light.png`. The original plain wallpaper remains in `wallpaper.png`; `wallpaper.py` regenerates that plain version.
 
 Original configuration backups remain under `~/.local/state/rice/backups/`. Display findings and the temporary 240 Hz trial are in `display.md`.
 

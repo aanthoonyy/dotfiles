@@ -183,7 +183,7 @@ focus_follows_mouse no
 for_window [window_role="pop-up"] floating enable
 for_window [class="Pavucontrol"] floating enable
 exec --no-startup-id xrandr --output DP-2 --mode 1920x1080 --rate 239.964
-exec_always --no-startup-id feh --no-fehbg --bg-fill ~/.config/rice/wallpaper.png
+exec_always --no-startup-id feh --no-fehbg --bg-fill ~/.config/rice/wallpaper-tux-light.png
 exec --no-startup-id picom --config ~/.config/picom/picom.conf
 
 exec_always --no-startup-id python3 ~/.config/rice/windows.py daemon
