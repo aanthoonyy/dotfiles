@@ -39,3 +39,13 @@ The icon buttons use compact 26-pixel targets. Control Center popovers use short
 Sound pages slide over 220 ms and resize while staying anchored above the bar. Device selection shows a spinner, confirms the selected output, then slides back to volume without closing the popover.
 
 Device-page transitions render the actual moving content through a horizontal pixel blur, strongest during fast movement and fading to crisp content at rest. This uses the installed Pillow and Cairo Python libraries.
+
+## Drag-and-snap window controls
+
+New windows stay in automatic horizontal layout: one fills the workspace, two split it. Drag a title bar onto another window to snap into the layout. A single blue half-window preview shows the placement. The only choices are left, right, top, and bottom; there are no center or outer-parent drop zones. Super+left-drag also rearranges tiled windows from anywhere inside them. Drag a divider to resize the split. Freely floating windows remain available through Super+Shift+Space; Super+T returns them to automatic layout.
+
+Right-click an i3 title bar or press Alt+Space for Minimize, Maximize/Restore, Return to automatic layout, and Close. Alt+F4 closes the focused app. Super+Up maximizes/restores while keeping the bar visible; Super+Down minimizes; Super+Shift+Down restores the last minimized window. Super+T returns a floating window to automatic layout.
+
+Alt+Tab toggles recent apps. Alt+Shift+Tab or the overlapping-windows button beside the status controls opens a searchable window list, including minimized apps. Click an entry or press Enter to activate it. Escape cancels.
+
+These are i3 title bars with a window menu. Native minimize/maximize/close buttons require a different window manager. Window geometry and minimized state are kept outside Git in `~/.local/state/rice/windows.json`; focus history is per session. Original settings before this change are in `~/.local/state/rice/backups/`.
