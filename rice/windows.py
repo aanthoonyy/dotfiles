@@ -30,7 +30,7 @@ class I3:
         encoded = payload.encode()
         self.socket.sendall(b'i3-ipc' + struct.pack('<II', len(encoded), kind) + encoded)
         header = self.receive(14)
-        size, response = struct.unpack('<II', header[6:])
+        size, _ = struct.unpack('<II', header[6:])
         return json.loads(self.receive(size))
 
     def command(self, value):
@@ -104,58 +104,10 @@ def maximize(node, workspace):
     save()
 
 
-def drag(node, workspace, resize=False):
-    cid = node['id']
-    start_x, start_y, mask = pointer()
-    button = 1 << (10 if resize else 8)
-    rect = dict(node['rect'])
-    work = workspace['rect']
-    started = False
-    left = start_x < rect['x'] + rect['width'] / 2
-    top = start_y < rect['y'] + rect['height'] / 2
-    while True:
-        x, y, mask = pointer()
-        if not mask & button:
-            break
-        dx, dy = x - start_x, y - start_y
-        if not started and abs(dx) + abs(dy) >= 5:
-            started = True
-            state['maximized'].pop(str(cid), None)
-            save()
-            if not resize and rect['width'] >= work['width'] * .95 and rect['height'] >= work['height'] * .9:
-                width, height = round(work['width'] * .72), round(work['height'] * .72)
-                rect['x'] = round(start_x - (start_x - rect['x']) / rect['width'] * width)
-                rect['y'] = start_y - min(start_y - rect['y'], 24)
-                rect['width'], rect['height'] = width, height
-            i3.command(f'[con_id={cid}] fullscreen disable, floating enable, border pixel 3')
-            geometry(cid, rect)
-        if started:
-            if resize:
-                width = max(240, rect['width'] + (-dx if left else dx))
-                height = max(140, rect['height'] + (-dy if top else dy))
-                geometry(cid, {'x': rect['x'] + rect['width'] - width if left else rect['x'], 'y': rect['y'] + rect['height'] - height if top else rect['y'], 'width': width, 'height': height})
-            else:
-                i3.command(f'[con_id={cid}] move absolute position {rect["x"] + dx} px {rect["y"] + dy} px')
-        time.sleep(1 / 120)
-
-
 def snap_side(rect, x, y):
     nx = (x - rect['x']) / rect['width']
     ny = (y - rect['y']) / rect['height']
     return min((('left', nx), ('right', 1 - nx), ('top', ny), ('bottom', 1 - ny)), key=lambda pair: pair[1])[0]
-
-
-def snap_rect(rect, side):
-    result = dict(rect)
-    if side in ('left', 'right'):
-        result['width'] = rect['width'] // 2
-        if side == 'right':
-            result['x'] += rect['width'] - result['width']
-    else:
-        result['height'] = rect['height'] // 2
-        if side == 'bottom':
-            result['y'] += rect['height'] - result['height']
-    return result
 
 
 def snap_plan(workspace, source, target, side):
@@ -380,76 +332,71 @@ def track_focus():
             time.sleep(.25)
 
 
-action = sys.argv[1] if len(sys.argv) > 1 else 'switch'
-if action == 'daemon':
-    track_focus()
-    sys.exit(0)
-lock = open(Path(os.environ.get('XDG_RUNTIME_DIR', '/tmp')) / f'rice-windows-{os.getuid()}.lock', 'a')
-fcntl.flock(lock, fcntl.LOCK_EX)
-i3 = I3()
-state_path = Path.home() / '.local/state/rice/windows.json'
-try:
-    state = json.loads(state_path.read_text())
-except (FileNotFoundError, ValueError):
-    state = {'minimized': {}, 'maximized': {}}
-windows = i3.windows()
-try:
-    order = json.loads(history_path().read_text())
-    windows.sort(key=lambda pair: order.index(pair[0]['id']) if pair[0]['id'] in order else len(order))
-except (FileNotFoundError, ValueError):
-    pass
-if not windows:
-    sys.exit(0)
-valid = {str(n['id']) for n, ws in windows}
-for key in ('minimized', 'maximized'):
-    state[key] = {cid: value for cid, value in state[key].items() if cid in valid}
-node, workspace = next(((n, ws) for n, ws in windows if n.get('focused')), windows[0])
-if action in ('drag', 'resize', 'snap'):
-    xlib = c.CDLL('libX11.so.6')
-    xlib.XOpenDisplay.argtypes = [c.c_char_p]
-    xlib.XOpenDisplay.restype = c.c_void_p
-    xlib.XDefaultRootWindow.argtypes = [c.c_void_p]
-    xlib.XDefaultRootWindow.restype = c.c_ulong
-    xlib.XQueryPointer.argtypes = [c.c_void_p, c.c_ulong, c.POINTER(c.c_ulong), c.POINTER(c.c_ulong), c.POINTER(c.c_int), c.POINTER(c.c_int), c.POINTER(c.c_int), c.POINTER(c.c_int), c.POINTER(c.c_uint)]
-    display = xlib.XOpenDisplay(None)
-    if display:
-        root = xlib.XDefaultRootWindow(display)
-        if action == 'snap':
+def main():
+    global i3, state_path, state, xlib, display, root
+    action = sys.argv[1] if len(sys.argv) > 1 else 'switch'
+    if action == 'daemon':
+        track_focus()
+        sys.exit(0)
+    lock = open(Path(os.environ.get('XDG_RUNTIME_DIR', '/tmp')) / f'rice-windows-{os.getuid()}.lock', 'a')
+    fcntl.flock(lock, fcntl.LOCK_EX)
+    i3 = I3()
+    state_path = Path.home() / '.local/state/rice/windows.json'
+    try:
+        state = json.loads(state_path.read_text())
+    except (FileNotFoundError, ValueError):
+        state = {'minimized': {}, 'maximized': {}}
+    windows = i3.windows()
+    try:
+        order = json.loads(history_path().read_text())
+        windows.sort(key=lambda pair: order.index(pair[0]['id']) if pair[0]['id'] in order else len(order))
+    except (FileNotFoundError, ValueError):
+        pass
+    if not windows:
+        sys.exit(0)
+    valid = {str(n['id']) for n, ws in windows}
+    for key in ('minimized', 'maximized'):
+        state[key] = {cid: value for cid, value in state[key].items() if cid in valid}
+    node, workspace = next(((n, ws) for n, ws in windows if n.get('focused')), windows[0])
+    if action == 'snap':
+        xlib = c.CDLL('libX11.so.6')
+        xlib.XOpenDisplay.argtypes = [c.c_char_p]
+        xlib.XOpenDisplay.restype = c.c_void_p
+        xlib.XDefaultRootWindow.argtypes = [c.c_void_p]
+        xlib.XDefaultRootWindow.restype = c.c_ulong
+        xlib.XQueryPointer.argtypes = [c.c_void_p, c.c_ulong, c.POINTER(c.c_ulong), c.POINTER(c.c_ulong), c.POINTER(c.c_int), c.POINTER(c.c_int), c.POINTER(c.c_int), c.POINTER(c.c_int), c.POINTER(c.c_uint)]
+        display = xlib.XOpenDisplay(None)
+        if display:
+            root = xlib.XDefaultRootWindow(display)
             snap_drag(node, workspace)
+    elif action in ('switch', 'alt-tab'):
+        candidates = [(n, ws) for n, ws in windows if n['id'] != node['id']]
+        if action == 'alt-tab':
+            index = windows.index(candidates[0]) if candidates else None
         else:
-            drag(node, workspace, action == 'resize')
-elif action in ('switch', 'alt-tab'):
-    candidates = [(n, ws) for n, ws in windows if n['id'] != node['id']]
-    if action == 'alt-tab':
-        index = windows.index(candidates[0]) if candidates else None
-    else:
-        index = choose([n.get('name', 'Window').replace('\n', ' ') + ('  —  minimized' if ws['name'] == '__i3_scratch' else '  —  ' + ws['name']) for n, ws in windows], 'Windows')
-    if index is not None:
-        selected, ws = windows[index]
-        if ws['name'] == '__i3_scratch':
+            index = choose([n.get('name', 'Window').replace('\n', ' ') + ('  —  minimized' if ws['name'] == '__i3_scratch' else '  —  ' + ws['name']) for n, ws in windows], 'Windows')
+        if index is not None:
+            selected, ws = windows[index]
+            if ws['name'] == '__i3_scratch':
+                restore(selected)
+            else:
+                i3.command(f'[con_id={selected["id"]}] focus')
+    elif action == 'restore':
+        hidden = [(n, ws) for n, ws in windows if ws['name'] == '__i3_scratch']
+        ordered = list(state['minimized'])
+        if hidden:
+            selected = max(hidden, key=lambda pair: ordered.index(str(pair[0]['id'])) if str(pair[0]['id']) in ordered else -1)[0]
             restore(selected)
-        else:
-            i3.command(f'[con_id={selected["id"]}] focus')
-elif action == 'restore':
-    hidden = [(n, ws) for n, ws in windows if ws['name'] == '__i3_scratch']
-    ordered = list(state['minimized'])
-    if hidden:
-        selected = max(hidden, key=lambda pair: ordered.index(str(pair[0]['id'])) if str(pair[0]['id']) in ordered else -1)[0]
-        restore(selected)
-else:
-    if action == 'menu':
-        options = ['Minimize', 'Maximize / Restore', 'Return to automatic layout', 'Close']
-        index = choose(options, 'Window')
-        if index is None:
-            sys.exit(0)
-        action = ['minimize', 'maximize', 'retile', 'close'][index]
-    if action == 'minimize':
-        minimize(node, workspace)
-    elif action == 'maximize':
-        maximize(node, workspace)
-    elif action == 'retile':
-        state['maximized'].pop(str(node['id']), None)
-        i3.command(f'[con_id={node["id"]}] floating disable, border pixel 1')
-        save()
-    elif action == 'close':
-        i3.command(f'[con_id={node["id"]}] kill')
+    else:
+        if action == 'minimize':
+            minimize(node, workspace)
+        elif action == 'maximize':
+            maximize(node, workspace)
+        elif action == 'retile':
+            state['maximized'].pop(str(node['id']), None)
+            i3.command(f'[con_id={node["id"]}] floating disable, border pixel 1')
+            save()
+
+
+if __name__ == '__main__':
+    main()

@@ -6,6 +6,12 @@
 !/rofi/
 !/picom/
 !/rice/
+/rice/*
+!/rice/status.py
+!/rice/controls.py
+!/rice/windows.py
+!/rice/tux-original.jpg
+!/rice/wallpaper-tux-light.png
 !/nvim/
 !/clangd/
 !/autostart/

@@ -47,8 +47,7 @@ window { background-color: transparent; }
 .card label { color: #1d1d1f; font-family: Noto Sans; font-size: 10pt; }
 .card .heading { font-size: 14pt; font-weight: 600; }
 .card .secondary { color: #616166; font-size: 9pt; }
-.card button { background-image: none; background-color: #ffffff; color: #1d1d1f; border: 1px solid #d1d1d6; border-radius: 7px; box-shadow: none; padding: 6px 10px; }
-.card button { transition: background-color 120ms ease-out, border-color 120ms ease-out; }
+.card button { background-image: none; background-color: #ffffff; color: #1d1d1f; border: 1px solid #d1d1d6; border-radius: 7px; box-shadow: none; padding: 6px 10px; transition: background-color 120ms ease-out, border-color 120ms ease-out; }
 .card button:hover { background-color: #e5edfa; }
 .card button:checked { background-color: #d6e8ff; }
 .card .output-row { padding: 12px; border-color: transparent; background-color: transparent; }
@@ -59,8 +58,7 @@ window { background-color: transparent; }
 .card .icon-button { padding: 6px; min-width: 24px; min-height: 24px; }
 .card scale trough { background-color: #d1d1d6; border: none; min-height: 5px; }
 .card scale highlight { background-color: #0088ff; border: none; }
-.card scale slider { transition: background-color 100ms ease-out; }
-.card scale slider { background-image: none; background-color: #ffffff; border: 1px solid #bdbdc2; min-width: 16px; min-height: 16px; box-shadow: 0 1px 2px alpha(black, 0.12); }
+.card scale slider { background-image: none; background-color: #ffffff; border: 1px solid #bdbdc2; min-width: 16px; min-height: 16px; transition: background-color 100ms ease-out; box-shadow: 0 1px 2px alpha(black, 0.12); }
 .card calendar { background-color: #ffffff; color: #1d1d1f; border: 1px solid #d1d1d6; border-radius: 7px; padding: 8px; }
 .card calendar:selected { background-color: #0088ff; color: #ffffff; }
 .card calendar.header { background-color: #ececf0; }
@@ -166,7 +164,10 @@ class Controls(Gtk.Window):
             event = json.loads(name)
             name = event['panel']
             widths = {'sound': 26, 'network': 26, 'calendar': 154, 'power': 26}
-            left = event['x'] - sum(width for key, width in list(widths.items())[:list(widths).index(name)])
+            if name not in widths:
+                return False
+            preceding = list(widths)[:list(widths).index(name)]
+            left = event['x'] - sum(widths[key] for key in preceding)
             self.targets = {}
             for key, width in widths.items():
                 self.targets[key] = (left, event['y'], width, event['height'])
