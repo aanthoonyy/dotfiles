@@ -26,3 +26,6 @@
 !/rice/status.py
 !/rice/wallpaper.py
 !/rice/wallpaper.png
+!/autostart/
+/autostart/*
+!/autostart/nm-applet.desktop

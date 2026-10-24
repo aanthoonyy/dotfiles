@@ -1,9 +1,22 @@
 import datetime
 import json
 import subprocess
+import sys
+import threading
 import time
 
-print(json.dumps({"version": 1}), flush=True)
+def handle_clicks():
+    for line in sys.stdin:
+        try:
+            event = json.loads(line.strip().lstrip(","))
+            if event.get("name") == "network" and event.get("button") == 1:
+                subprocess.Popen(["nm-connection-editor"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except (ValueError, AttributeError, OSError):
+            pass
+
+
+threading.Thread(target=handle_clicks, daemon=True).start()
+print(json.dumps({"version": 1, "click_events": True}), flush=True)
 print("[", flush=True)
 while True:
     blocks = []
@@ -20,7 +33,18 @@ while True:
         {"full_text": now.strftime("%a  %d %b"), "color": "#616166"},
         {"full_text": now.strftime("%H:%M"), "color": "#3a3a3c"},
     ])
+    try:
+        network = subprocess.run(["nmcli", "-t", "-f", "STATE", "general"], capture_output=True, text=True, timeout=2)
+        connected = network.returncode == 0 and network.stdout.strip().startswith("connected")
+        blocks.append({
+            "name": "network",
+            "full_text": '<span font_family="Noto Sans Symbols 2">🌐︎</span>' + ("" if connected else " ×"),
+            "markup": "pango",
+            "color": "#3a3a3c" if connected else "#9a9aa0",
+        })
+    except (OSError, subprocess.TimeoutExpired):
+        pass
     for block in blocks:
-        block.update(separator=False, separator_block_width=28)
+        block.update(separator=False, separator_block_width=10)
     print(json.dumps(blocks) + ",", flush=True)
     time.sleep(5)
