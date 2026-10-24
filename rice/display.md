@@ -5,7 +5,7 @@ Observed on 2026-10-23 in the active X11 session:
 - GPU: NVIDIA GeForce RTX 3060 Lite Hash Rate.
 - Kernel driver: Nouveau.
 - Active connector: DP-2, ZOWIE XL LCD (BNQ).
-- Current XRandR mode: 1920×1080 at 60.000 Hz.
+- Initial XRandR mode: 1920×1080 at 60.000 Hz.
 - XRandR advertises 1920×1080 at 239.964 Hz, 143.981 Hz, and 120.000 Hz, among other modes.
 - The saved GNOME monitor configuration already selects 1920×1080 at 239.964 Hz.
 
@@ -31,4 +31,4 @@ If the image is stable, cancel the fallback in the same shell before the timer e
 kill "$fallback"
 ```
 
-Verify the selected mode using `xrandr --query` (the current rate has an asterisk). Only after confirming stability should a startup command be added to i3. No refresh-rate setting has been applied or persisted yet.
+Verify the selected mode using `xrandr --query` (the current rate has an asterisk). Only after confirming stability should a startup command be added to i3. The 239.964 Hz mode was successfully applied and visually confirmed stable by the user. It is now selected at i3 startup by the xrandr command in `~/.config/i3/config`. The automatic trial fallback has been cleared.
