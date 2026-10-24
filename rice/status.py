@@ -21,10 +21,8 @@ def handle_clicks():
         try:
             event = json.loads(line.strip().lstrip(','))
             name, button = event.get('name'), event.get('button')
-            if name in ('sound', 'network', 'calendar') and button == 1:
+            if name in ('sound', 'network', 'calendar', 'power') and button == 1:
                 subprocess.Popen(['python3', str(Path(__file__).with_name('controls.py')), json.dumps({'panel': name, 'x': event.get('x', 0) - event.get('relative_x', 0), 'y': event.get('y', 0) - event.get('relative_y', 0), 'height': event.get('height', 26)})], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            elif name == 'windows' and button == 1:
-                subprocess.Popen(['python3', str(Path(__file__).with_name('windows.py')), 'switch'])
             elif name == 'sound' and button in (4, 5):
                 subprocess.Popen(['pactl', 'set-sink-volume', '@DEFAULT_SINK@', '+2%' if button == 4 else '-2%'])
         except (ValueError, AttributeError, OSError):
@@ -47,10 +45,10 @@ while True:
     network_icon = '\U000f0200' if wired else ('\U000f05a9' if wireless else '\U000f0202')
     now = datetime.datetime.now()
     blocks = [
-        {'name': 'windows', 'full_text': '<span font_family="Symbols Nerd Font Mono" size="11000">\uf2d2</span>'},
         {'name': 'sound', 'full_text': f'<span font_family="Symbols Nerd Font Mono" size="11000">{speaker}</span>'},
         {'name': 'network', 'full_text': f'<span font_family="Symbols Nerd Font Mono" size="11000">{network_icon}</span>', 'color': '#3a3a3c' if connected else '#9a9aa0'},
         {'name': 'calendar', 'full_text': now.strftime('%m-%d-%Y  %I:%M %p').replace('  0', '  ')},
+        {'name': 'power', 'full_text': '<span font_family="Symbols Nerd Font Mono" size="11000">\uf011</span>'},
     ]
     for block in blocks:
         block.update(separator=False, separator_block_width=0, markup='pango', min_width=154 if block['name'] == 'calendar' else 26, align='center')

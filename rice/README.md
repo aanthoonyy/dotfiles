@@ -46,9 +46,9 @@ New windows stay in automatic horizontal layout: one fills the workspace, two sp
 
 Super+Shift+Q closes the focused app. Alt+F4 and Alt+Space are not bound by i3. Super+Up maximizes/restores while keeping the bar visible; Super+Down minimizes; Super+Shift+Down restores the last minimized window. Super+T returns a floating window to automatic layout.
 
-Alt+Tab toggles recent apps. Alt+Shift+Tab or the overlapping-windows button beside the status controls opens a searchable window list, including minimized apps. Click an entry or press Enter to activate it. Escape cancels.
+Alt+Tab toggles recent apps. Alt+Shift+Tab opens a searchable window list, including minimized apps. Click an entry or press Enter to activate it. Escape cancels.
 
-Window actions use the Super shortcuts and the bottom-bar window list. Native minimize/maximize/close buttons require a different window manager. Window geometry and minimized state are kept outside Git in `~/.local/state/rice/windows.json`; focus history is per session. Original settings before this change are in `~/.local/state/rice/backups/`.
+Window actions use the Super shortcuts and Alt+Shift+Tab. Native minimize/maximize/close buttons require a different window manager. Window geometry and minimized state are kept outside Git in `~/.local/state/rice/windows.json`; focus history is per session. Original settings before this change are in `~/.local/state/rice/backups/`.
 
 Normal windows have short open/close fades and 160 ms movement/resize transitions. Drag-preview regions interpolate over 120 ms. The layout preview accounts for the space freed by the dragged window.
 
@@ -57,3 +57,5 @@ Window and workspace switching is instant: normal-window show/hide fades are dis
 Super+Shift+S opens Flameshot capture. Its configuration enables direct X11 screenshots for this i3 session, which does not have an active screenshot portal.
 
 Flameshot has its tray icon hidden. Its capture windows bypass the general animation rules and stay composited to avoid flashing when the screenshot overlay closes.
+
+A compact power button sits to the right of the clock. It opens Lock, Sleep, Log out, Restart, and Shut down. Log out, restart, and shutdown ask for confirmation. The window-list button has been removed from the bar.

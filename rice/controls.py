@@ -165,13 +165,13 @@ class Controls(Gtk.Window):
         if name.startswith('{'):
             event = json.loads(name)
             name = event['panel']
-            widths = {'sound': 26, 'network': 26, 'calendar': 154}
+            widths = {'sound': 26, 'network': 26, 'calendar': 154, 'power': 26}
             left = event['x'] - sum(width for key, width in list(widths.items())[:list(widths).index(name)])
             self.targets = {}
             for key, width in widths.items():
                 self.targets[key] = (left, event['y'], width, event['height'])
                 left += width
-        if name not in ('sound', 'sound_outputs', 'network', 'calendar'):
+        if name not in ('sound', 'sound_outputs', 'network', 'calendar', 'power', 'power_confirm'):
             return False
         if toggle and self.get_visible() and self.panel == name:
             return self.dismiss()
@@ -425,6 +425,69 @@ class Controls(Gtk.Window):
     def network_settings(self, button):
         self.dismiss()
         subprocess.Popen(['nm-connection-editor'])
+
+    def power(self):
+        self.add_item(self.label('Power', 'heading'))
+        actions = [
+            ('lock', 'Lock', 'system-lock-screen-symbolic'),
+            ('sleep', 'Sleep', 'weather-clear-night-symbolic'),
+            ('logout', 'Log out', 'system-log-out-symbolic'),
+            ('restart', 'Restart', 'system-reboot-symbolic'),
+            ('shutdown', 'Shut down', 'system-shutdown-symbolic'),
+        ]
+        for action, title, icon in actions:
+            button = Gtk.Button(label=title)
+            button.set_image(Gtk.Image.new_from_icon_name(icon, Gtk.IconSize.BUTTON))
+            button.set_always_show_image(True)
+            button.connect('clicked', self.select_power, action, title)
+            self.add_item(button)
+
+    def select_power(self, button, action, title):
+        if action in ('logout', 'restart', 'shutdown'):
+            self.pending_power = action, title
+            self.show_panel('power_confirm', toggle=False)
+        else:
+            self.run_power(action)
+
+    def power_confirm(self):
+        action, title = self.pending_power
+        self.add_item(self.label(title + '?', 'heading'))
+        self.add_item(self.label('Your open apps will close.', 'secondary'))
+        row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        cancel = Gtk.Button(label='Cancel')
+        cancel.connect('clicked', lambda *_: self.show_panel('power', toggle=False))
+        confirm = Gtk.Button(label=title)
+        confirm.connect('clicked', lambda *_: self.run_power(action))
+        row.pack_start(cancel, True, True, 0)
+        row.pack_end(confirm, True, True, 0)
+        self.add_item(row)
+        cancel.grab_focus()
+
+    def run_power(self, action):
+        commands = {
+            'lock': ['loginctl', 'lock-session'],
+            'sleep': ['systemctl', 'suspend'],
+            'logout': ['i3-msg', 'exit'],
+            'restart': ['systemctl', 'reboot'],
+            'shutdown': ['systemctl', 'poweroff'],
+        }
+        self.dismiss()
+        def execute():
+            try:
+                result = subprocess.run(commands[action], capture_output=True, text=True, timeout=30)
+                error = result.stderr.strip() if result.returncode else ''
+                if result.returncode and not error:
+                    error = 'The action could not be completed.'
+            except (OSError, subprocess.TimeoutExpired):
+                error = 'The action could not be completed.'
+            if error:
+                def show_error():
+                    self.show_panel('power', toggle=False)
+                    self.add_item(self.label(error[:240], 'secondary'))
+                    self.card.show_all()
+                    return False
+                GLib.idle_add(show_error)
+        threading.Thread(target=execute, daemon=True).start()
 
     def calendar(self):
         now = datetime.datetime.now()
