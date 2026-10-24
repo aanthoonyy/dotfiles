@@ -1,0 +1,14 @@
+[Unit]
+Description=Socksfor1 World Breaker - Paper 1.21.1 local test
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/anthony/Documents/rmcl/socksfor1-world-breaker/test-server
+ExecStart=/home/anthony/.local/share/rmcl-build/jdk-21/bin/java -Xms512M -Xmx3G -jar paper.jar --nogui
+KillSignal=SIGINT
+TimeoutStopSec=120
+Restart=no
+
+[Install]
+WantedBy=default.target

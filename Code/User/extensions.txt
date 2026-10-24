@@ -1,0 +1,8 @@
+esbenp.prettier-vscode
+llvm-vs-code-extensions.vscode-clangd
+ms-vscode.cmake-tools
+ms-vscode.cpp-devtools
+ms-vscode.cpptools
+ms-vscode.cpptools-extension-pack
+ms-vscode.cpptools-themes
+waderyan.gitblame

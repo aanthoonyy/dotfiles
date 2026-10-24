@@ -1,0 +1,4 @@
+If:
+  PathMatch: /home/anthony/Documents/zathura/.*
+CompileFlags:
+  CompilationDatabase: /home/anthony/Documents/zathura/build/dev

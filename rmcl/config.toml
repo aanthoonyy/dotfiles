@@ -1,0 +1,50 @@
+[general]
+# check imported modpacks and managed content for updates automatically
+check_modpack_updates = true
+check_content_updates = true
+
+[paths]
+# instances_dir and meta_dir use platform defaults when omitted
+# java_path is omitted to select Java automatically
+# instances_dir = "/path/to/minecraft/instances"
+# meta_dir = "/path/to/rmcl/meta"
+# java_path = "/usr/bin/java"
+
+[defaults]
+# inherited by instances that do not override their memory
+memory_min = "512M"
+memory_max = "2G"
+# appended to every instance; instance values take precedence where applicable
+jvm_args = []
+environment = {}
+# inherited by instances that use launcher window defaults
+window_mode = "windowed"
+resolution = [854, 480]
+
+[ui]
+# image protocol: auto, halfblocks, quadrants, kitty, or iterm2
+image_protocol = "auto"
+# [] shows all guides; ["main"] keeps popup guides; ["all"] hides every guide
+# areas can also be hidden selectively: instances, content, accounts, settings, popups
+hidden_shortcut_hints = []
+# error popup timing (in ms)
+error_auto_dismiss_ms = 5000
+error_slide_start_ms = 3500
+error_fly_out_ms = 300
+
+# don’t let this blow up endlessly
+max_error_events = 50
+
+[content]
+# ask before choosing when the same file exists on multiple providers
+ask_on_provider_conflict = true
+# preferred for duplicate discovery results and automatic conflict resolution
+# accepts "modrinth" or "curseforge"
+preferred_provider = "modrinth"
+# only show results from the preferred provider instead of filling from both
+preferred_provider_only = false
+# retry unchanged files that were not found after this many hours
+unmatched_retry_hours = 24
+# avoid hashing enormous external packs during automatic provider matching;
+# set to 0 to remove the limit
+max_fingerprint_size_mib = 512

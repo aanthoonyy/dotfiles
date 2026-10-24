@@ -2,7 +2,7 @@
 
 Apple-inspired light surfaces, near-white highlights, dark text, and restrained blue accents, gapless tiling, square corners, and a compact bottom bar.
 
-The Git repository lives directly in `~/.config`. These are the active configurations; edit them in place. The root `.gitignore` allows only the specific rice files, leaving other application settings untracked.
+The Git repository lives directly in `~/.config`. These are the active configurations; edit them in place. The root `.gitignore` includes selected personal configurations alongside the rice, leaving application databases, caches, and account data untracked.
 
 Install dependencies with `sudo dnf install kitty rofi picom feh xrandr`.
 
