@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Build and launch this checkout with its locally built PDF plugin.
+set -euo pipefail
+repo_dir="${ZATHURA_REPO_DIR:-$HOME/Documents/zathura}"
+if (( $# == 0 )); then
+  set -- "$repo_dir/Advanced.Programming.in.the.UNIX.Environment.3rd.Edition.0321637739.pdf"
+fi
+build_dir="$repo_dir/build/dev"
+prefix_dir="$repo_dir/build/dev-prefix"
+plugin_dir="$repo_dir/build/dev-poppler"
+
+if [[ ! -f "$build_dir/build.ninja" || ! -f "$plugin_dir/build.ninja" ]]; then
+  echo "Development build is not configured in $repo_dir/build." >&2
+  exit 1
+fi
+
+export LD_LIBRARY_PATH="$prefix_dir/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export PKG_CONFIG_PATH="$prefix_dir/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+meson compile -C "$build_dir" >&2
+meson compile -C "$plugin_dir" >&2
+mkdir -p "$repo_dir/build/dev-data" "$repo_dir/build/dev-cache"
+exec "$build_dir/zathura" --plugins-dir="$plugin_dir" \
+  --data-dir="$repo_dir/build/dev-data" --cache-dir="$repo_dir/build/dev-cache" "$@"

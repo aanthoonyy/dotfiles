@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_dir="${HANDBRAKE_REPO_DIR:-$HOME/Documents/HandBrake}"
+build_dir="$repo_dir/build/dev"
+
+if [[ ! -x "$repo_dir/configure" ]]; then
+  printf 'HandBrake checkout not found: %s\n' "$repo_dir" >&2
+  exit 1
+fi
+
+if [[ ! -f "$build_dir/GNUmakefile" ]]; then
+  mkdir -p "$build_dir"
+  (
+    cd -- "$build_dir"
+    "$repo_dir/configure" --enable-gtk
+  ) >&2
+fi
+
+make -C "$build_dir" -j "${HANDBRAKE_JOBS:-$(nproc)}" >&2
+exec "$build_dir/gtk/src/ghb" "$@"

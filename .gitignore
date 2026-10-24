@@ -77,3 +77,8 @@ secrets.json
 !/flameshot/
 /flameshot/*
 !/flameshot/flameshot.ini
+!/bin/
+/bin/*
+!/bin/zathura-dev
+!/bin/handbrake-dev
+!/bin/README.md
