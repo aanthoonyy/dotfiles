@@ -86,3 +86,6 @@ secrets.json
 /zsh/*
 !/zsh/.zshrc
 !/zsh/README.md
+!/firefox/
+/firefox/*
+!/firefox/user.js
