@@ -29,3 +29,4 @@
 !/autostart/
 /autostart/*
 !/autostart/nm-applet.desktop
+!/rice/controls.py

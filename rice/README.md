@@ -27,3 +27,9 @@ git add .
 git diff --cached
 git commit -m "Manage active rice files directly in .config"
 ```
+
+The bottom-right controls open Sound, Network, and Calendar popovers. Click outside or press Escape to close. Scroll over the speaker to adjust volume. The popovers use the system Python GTK 3 bindings.
+
+The clock uses month-day-year and 12-hour time. Speaker and connection icons use the installed Symbols Nerd Font Mono. Sound output buttons set the default device and move existing playback streams. Horizontal i3bar padding stays at zero so its click regions align with the controls.
+
+Sound uses a compact volume view. Click the current output row to open the device list; a blue check marks the active output. Selecting a device returns to the volume view.

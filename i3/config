@@ -211,7 +211,7 @@ bar {
         strip_workspace_numbers no
         binding_mode_indicator yes
         tray_output DP-2
-        padding 2 8 2 8
+        padding 2 0 2 0
         workspace_min_width 24
         colors {
                 background #e9e9ed
