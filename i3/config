@@ -199,13 +199,13 @@ workspace_auto_back_and_forth yes
 focus_follows_mouse no
 for_window [window_role="pop-up"] floating enable
 for_window [class="Pavucontrol"] floating enable
-exec_always --no-startup-id feh --no-fehbg --bg-fill ~/.local/share/rice/wallpaper.png
+exec_always --no-startup-id feh --no-fehbg --bg-fill ~/.config/rice/wallpaper.png
 exec --no-startup-id picom --config ~/.config/picom/picom.conf
 
 bar {
         position top
         font pango:Source Code Pro 10
-        status_command python3 ~/.local/share/rice/status.py
+        status_command python3 ~/.config/rice/status.py
         separator_symbol "·"
         workspace_buttons yes
         strip_workspace_numbers no

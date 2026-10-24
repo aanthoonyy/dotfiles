@@ -22,4 +22,4 @@ for i in range(35):
             ctx.line_to(x, y)
     ctx.set_source_rgba(0.57, 0.72, 0.65, 0.055 + 0.04 * (i / 35))
     ctx.stroke()
-surface.write_to_png(str(Path(__file__).resolve().parents[1] / 'assets/wallpaper.png'))
+surface.write_to_png(str(Path(__file__).resolve().parent / 'wallpaper.png'))
