@@ -68,3 +68,6 @@ accounts.json
 accounts.lock
 credentials.json
 secrets.json
+!/flameshot/
+/flameshot/*
+!/flameshot/flameshot.ini

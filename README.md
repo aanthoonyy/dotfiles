@@ -7,6 +7,7 @@ Personal configuration for Anthony's Fedora desktop. This repository lives direc
 | Configuration | Location |
 | --- | --- |
 | i3, Kitty, Rofi, Picom | `i3/`, `kitty/`, `rofi/`, `picom/` |
+| Flameshot screenshot settings | `flameshot/` |
 | Control center, window controls, wallpaper | `rice/` |
 | Neovim settings, plugins, and lockfile | `nvim/` |
 | VS Code settings and extension list | `Code/User/` |

@@ -53,3 +53,7 @@ These are i3 title bars with a window menu. Native minimize/maximize/close butto
 Normal windows have short open/close fades and 160 ms movement/resize transitions. Drag-preview regions interpolate over 120 ms. The layout preview accounts for the space freed by the dragged window.
 
 Window and workspace switching is instant: normal-window show/hide fades are disabled. Opening, closing, and layout changes retain their short animations.
+
+Super+Shift+S opens Flameshot capture. Its configuration enables direct X11 screenshots for this i3 session, which does not have an active screenshot portal.
+
+Flameshot has its tray icon hidden. Its capture windows bypass the general animation rules and stay composited to avoid flashing when the screenshot overlay closes.

@@ -49,6 +49,7 @@ tiling_drag off
 
 # start a terminal
 bindsym $mod+Return exec kitty
+bindsym --release $mod+Shift+s exec --no-startup-id flameshot gui
 
 # kill focused window
 bindsym $mod+Shift+q kill
