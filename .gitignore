@@ -89,3 +89,4 @@ secrets.json
 !/firefox/
 /firefox/*
 !/firefox/user.js
+!/sddm/
