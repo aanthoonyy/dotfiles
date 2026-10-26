@@ -18,4 +18,42 @@ if [[ ! -f "$build_dir/GNUmakefile" ]]; then
 fi
 
 make -C "$build_dir" -j "${HANDBRAKE_JOBS:-$(nproc)}" >&2
+python3 - "$build_dir" <<'PY'
+import json
+from pathlib import Path
+import shlex
+import subprocess
+import sys
+
+build = Path(sys.argv[1]).resolve()
+rules = '''.PHONY: dotfiles-compdb
+dotfiles-compdb:
+\t@:
+$(foreach source,$(LIBHB.c),$(info $(call LIBHB.GCC.C_O,$(patsubst $(SRC/)%.c,$(BUILD/)%.o,$(source)),$(source))))
+'''
+result = subprocess.run(
+    ['make', '--no-print-directory', '-s', '-f', 'GNUmakefile', '-f', '-', 'dotfiles-compdb'],
+    cwd=build, input=rules, text=True, capture_output=True, check=True,
+)
+entries = []
+for line in result.stdout.splitlines():
+    args = shlex.split(line)
+    if '-c' in args:
+        args.insert(1, '-I' + str(build.parent.parent / 'libhb'))
+        source = args[args.index('-c') + 1]
+        entries.append({'directory': str(build), 'arguments': args, 'file': source})
+if not entries:
+    raise SystemExit('No HandBrake core compile commands were found')
+gtk = build / 'gtk/compile_commands.json'
+if gtk.exists():
+    for entry in json.loads(gtk.read_text()):
+        args = entry.get('arguments') or shlex.split(entry.pop('command'))
+        args.insert(1, '-I' + str(build.parent.parent / 'libhb'))
+        entry['arguments'] = args
+        entries.append(entry)
+target = build / 'compile_commands.json'
+temporary = target.with_suffix('.tmp')
+temporary.write_text(json.dumps(entries, indent=2) + '\n')
+temporary.replace(target)
+PY
 exec "$build_dir/gtk/src/ghb" "$@"

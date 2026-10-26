@@ -15,4 +15,13 @@ return {
       },
     },
   },
+  {
+    "stevearc/conform.nvim",
+    opts = {
+      formatters_by_ft = {
+        -- format only; don't add/remove imports on save
+        go = { "gofumpt" },
+      },
+    },
+  },
 }

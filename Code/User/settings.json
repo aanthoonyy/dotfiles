@@ -1,4 +1,5 @@
 {
     "clangd.path": "/home/anthony/.config/Code/User/globalStorage/llvm-vs-code-extensions.vscode-clangd/install/23.1.0/clangd_23.1.0/bin/clangd",
-    "C_Cpp.intelliSenseEngine": "disabled"
+    "C_Cpp.intelliSenseEngine": "disabled",
+    "git.enableSmartCommit": true
 }

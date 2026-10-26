@@ -2,3 +2,8 @@ If:
   PathMatch: /home/anthony/Documents/zathura/.*
 CompileFlags:
   CompilationDatabase: /home/anthony/Documents/zathura/build/dev
+---
+If:
+  PathMatch: /home/anthony/Documents/HandBrake/.*
+CompileFlags:
+  CompilationDatabase: /home/anthony/Documents/HandBrake/build/dev
